@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayou
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from calculations import perform_analysis
+from plots_data import getting_plots_data
 
 class BeamAnalysisApp(QWidget):
     def __init__(self):
@@ -49,6 +49,13 @@ class BeamAnalysisApp(QWidget):
         self.add_distributed_load_button.clicked.connect(self.add_distributed_load)
         input_layout.addLayout(self.distributed_loads_layout)
         input_layout.addWidget(self.add_distributed_load_button)
+
+        input_layout.addWidget(QLabel("Moment (Position and Value):"))
+        self.moments_layout = QVBoxLayout()
+        self.add_moment_button = QPushButton("Add Moment")
+        self.add_moment_button.clicked.connect(self.add_moment)
+        input_layout.addLayout(self.moments_layout)
+        input_layout.addWidget(self.add_moment_button)
 
         analyze_button = QPushButton("Analyze")
         analyze_button.clicked.connect(self.perform_analysis_wrapper)
@@ -111,6 +118,21 @@ class BeamAnalysisApp(QWidget):
         distributed_load_input_layout.addWidget(interval_end)
         distributed_load_input_layout.addWidget(delete_button)
         self.distributed_loads_layout.addLayout(distributed_load_input_layout)
+
+    def add_moment(self):
+        moment_input_layout = QHBoxLayout()
+        moment_value = QLineEdit()
+        moment_value.setValidator(QDoubleValidator())
+        moment_value.setPlaceholderText("Value")
+        moment_position = QLineEdit()
+        moment_position.setValidator(QDoubleValidator())
+        moment_position.setPlaceholderText("Position")
+        delete_button = QPushButton("Delete")
+        delete_button.clicked.connect(lambda: self.delete_widget(moment_input_layout))
+        moment_input_layout.addWidget(moment_value)
+        moment_input_layout.addWidget(moment_position)
+        moment_input_layout.addWidget(delete_button)
+        self.moments_layout.addLayout(moment_input_layout)
 
     def delete_widget(self, layout):
         for i in reversed(range(layout.count())):
@@ -175,8 +197,18 @@ class BeamAnalysisApp(QWidget):
         elasticity = float(self.entries[1].text())
         inertia = float(self.entries[2].text())
 
-        supports = [(layout.itemAt(0).widget().currentText(), float(layout.itemAt(1).widget().text())) 
-                    for layout in (self.supports_layout.itemAt(i).layout() for i in range(self.supports_layout.count()))]
+        ## support_type: 1 - Roller, 2 - Pin, 3 - Fixed ##
+        supports = []
+        for layout in (self.supports_layout.itemAt(i).layout() for i in range(self.supports_layout.count())):
+            support_type = layout.itemAt(0).widget().currentText()
+            position = float(layout.itemAt(1).widget().text())
+            if support_type == "Roller":
+                support_code = 1
+            elif support_type == "Pin":
+                support_code = 2
+            elif support_type == "Fixed":
+                support_code = 3
+            supports.append((support_code, position))
 
         point_loads = [(float(layout.itemAt(0).widget().text()), float(layout.itemAt(1).widget().text())) 
                        for layout in (self.point_loads_layout.itemAt(i).layout() for i in range(self.point_loads_layout.count()))]
@@ -184,7 +216,10 @@ class BeamAnalysisApp(QWidget):
         distributed_loads = [(layout.itemAt(0).widget().text(), float(layout.itemAt(1).widget().text()), float(layout.itemAt(2).widget().text())) 
                              for layout in (self.distributed_loads_layout.itemAt(i).layout() for i in range(self.distributed_loads_layout.count()))]
         
-        shear, moment, deflection = perform_analysis(length, elasticity, inertia, supports, point_loads, distributed_loads)
+        moments = [(float(layout.itemAt(0).widget().text()), float(layout.itemAt(1).widget().text()))
+                  for layout in (self.moments_layout.itemAt(i).layout() for i in range(self.moments_layout.count()))]
+        
+        shear, moment, deflection = getting_plots_data(length, elasticity, inertia, supports, point_loads, distributed_loads, moments)
 
         # Draw shear force diagram
         self.shear_force_canvas.figure.clear()
