@@ -1,9 +1,10 @@
+##Statically determinate beam analysis
+
 import numpy as np
 import sympy as sp
 
-##Statically determinate beam analysis
 def perform_analysis_determinate(length, elasticity, inertia, supports, point_loads, distributed_loads, moments):
-    ### this function will perform the analysis of the beam
+    """ this function will perform the analysis of the beam
     ### and return the shear force and bending moment diagrams
     ### as well as the deflection of the beam.
     ### variables: length = length of the beam (m)
@@ -12,7 +13,7 @@ def perform_analysis_determinate(length, elasticity, inertia, supports, point_lo
     ###            supports = list of supports (type, position)
     ###            point_loads = list of point loads (force, position)
     ###            distributed_loads = list of distributed loads (function, start, end)
-    ###            moments = list of moments (moment, position)
+    ###            moments = list of moments (moment, position)"""
 
 
     #Beam defintion
@@ -127,6 +128,4 @@ def calculation_support_forces(ideal_beam):
         total_solution[syms[i]] = solution.args[0][i]
     return total_solution
 
-##Statically indeterminate beam analysis
-def perform_analysis_indeterminate():
-    pass
+

@@ -219,7 +219,9 @@ class BeamAnalysisApp(QWidget):
         moments = [(float(layout.itemAt(0).widget().text()), float(layout.itemAt(1).widget().text()))
                   for layout in (self.moments_layout.itemAt(i).layout() for i in range(self.moments_layout.count()))]
         
-        shear, moment, deflection = getting_plots_data(length, elasticity, inertia, supports, point_loads, distributed_loads, moments)
+        import calculator_two as calc
+        data = calc.perform_analysis_determinate(10, 1, 1, 100, [(3, 0)], [(10, 10)], [], [])
+        #data = calc.perform_analysis_determinate(length, elasticity, inertia, supports, point_loads, distributed_loads, moments)
 
         # Draw shear force diagram
         self.shear_force_canvas.figure.clear()
