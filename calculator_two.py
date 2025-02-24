@@ -42,14 +42,15 @@ def perform_analysis_determinate(length, elasticity, inertia, num_elements, supp
         global_f[2 * node_index] -= force
 
     # Apply distributed loads
-    for load, start, end in distributed_loads:
+    for load_expr, start, end in distributed_loads:
         start_index = np.argmin(np.abs(node_coords - start))
         end_index = np.argmin(np.abs(node_coords - end))
         for i in range(start_index, end_index):
-            global_f[2 * i] -= load * element_length / 2
-            global_f[2 * (i + 1)] -= load * element_length / 2
-            global_f[2 * i +1] -= load * element_length**2 /12
-            global_f[2 * (i + 1) + 1] += load * element_length**2 /12
+            load_mid = eval(load_expr, {'x': i, 'np': np})
+            global_f[2 * i] -= load_mid * element_length
+            global_f[2 * (i + 1)] -= load_mid * element_length
+            global_f[2 * i + 1] -= load_mid * element_length**2 / 12
+            global_f[2 * (i + 1) + 1] += load_mid * element_length**2 / 12
 
     # Apply moments
     for moment, position in moments:

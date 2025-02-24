@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayou
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from plots_data import getting_plots_data
 
 class BeamAnalysisApp(QWidget):
     def __init__(self):
@@ -220,8 +219,13 @@ class BeamAnalysisApp(QWidget):
                   for layout in (self.moments_layout.itemAt(i).layout() for i in range(self.moments_layout.count()))]
         
         import calculator_two as calc
-        data = calc.perform_analysis_determinate(10, 1, 1, 100, [(3, 0)], [(10, 10)], [], [])
-        #data = calc.perform_analysis_determinate(length, elasticity, inertia, supports, point_loads, distributed_loads, moments)
+        #data = calc.perform_analysis_determinate(10, 1, 1, 100, [(3, 0)], [(10, 10)], [], [])
+        data = calc.perform_analysis_determinate(length, elasticity, inertia, 100, supports, point_loads, distributed_loads, moments)
+        
+        nodes = data['node_coords']
+        shear = data['shear_forces']
+        moment = data['bending_moments']
+        deflection = data['deflections']
 
         # Draw shear force diagram
         self.shear_force_canvas.figure.clear()
