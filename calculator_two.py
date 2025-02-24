@@ -96,11 +96,25 @@ def perform_analysis_determinate(length, elasticity, inertia, num_elements, supp
     # Calculate deflections
     deflections = u[::2]
 
+    # Calculate support reactions
+    support_reactions = []
+    for i in range(len(supports)):
+        support_type = supports[i][0]
+        position = supports[i][1]
+        node_index = np.argmin(np.abs(node_coords - position))
+        if support_type == 3:
+            support_reactions.append({'type': 3, 'position': position, 'force': element_forces[2 * node_index], 'moment': element_forces[2 * node_index + 1]})
+        elif support_type == 2:
+            support_reactions.append({'type': 2, 'position': position, 'force': element_forces[2 * node_index]})
+        elif support_type == 1:
+            support_reactions.append({'type': 1, 'position': position, 'force': element_forces[2 * node_index]})
+
     plots_data = {
         'node_coords': node_coords,
         'shear_forces': shear_forces,
         'bending_moments': bending_moments,
-        'deflections': deflections
+        'deflections': deflections,
+        'support_reactions': support_reactions
     }
     return plots_data
     

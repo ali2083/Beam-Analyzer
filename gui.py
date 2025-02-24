@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QMessageBox)
+from PyQt5.QtWidgets import (QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QMessageBox, QDesktopWidget)
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -8,8 +8,15 @@ class BeamAnalysisApp(QWidget):
         super().__init__()
         self.initUI()
 
+    def center_top(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft().x(), 0)
+
     def initUI(self):
         self.setWindowTitle('Beam Analysis')
+        self.center_top()
 
         # Layouts
         main_layout = QHBoxLayout()
@@ -17,7 +24,7 @@ class BeamAnalysisApp(QWidget):
         plot_layout = QVBoxLayout()
 
         # Input widgets
-        labels = ["Length of Beam (meters):", "Modulus of Elasticity (Pascal):", "Moment of Inertia (m^4):"]
+        labels = ["Length of Beam (meters):", "Modulus of Elasticity (Kilo Pascal):", "Moment of Inertia (m^4):"]
         self.entries = []
 
         for label in labels:
@@ -64,6 +71,35 @@ class BeamAnalysisApp(QWidget):
         self.shear_force_canvas = self.create_plot_canvas("Shear Force Diagram", plot_layout)
         self.bending_moment_canvas = self.create_plot_canvas("Bending Moment Diagram", plot_layout)
         self.deflection_canvas = self.create_plot_canvas("Deflection Diagram", plot_layout)
+
+        # Show sensitive information
+        # Sensitive information labels
+        sensitive_info_layout = QVBoxLayout()
+
+        max_shear_label = QLabel("Maximum Shear Force (N):")
+        self.max_shear_value = QLabel("")
+        max_shear_layout = QHBoxLayout()
+        max_shear_layout.addWidget(max_shear_label)
+        max_shear_layout.addWidget(self.max_shear_value)
+        sensitive_info_layout.addLayout(max_shear_layout)
+
+        max_moment_label = QLabel("Maximum Bending Moment (Nm):")
+        self.max_moment_value = QLabel("")
+        max_moment_layout = QHBoxLayout()
+        max_moment_layout.addWidget(max_moment_label)
+        max_moment_layout.addWidget(self.max_moment_value)
+        sensitive_info_layout.addLayout(max_moment_layout)
+
+        max_deflection_label = QLabel("Maximum Deflection (m):")
+        self.max_deflection_value = QLabel("")
+        max_deflection_layout = QHBoxLayout()
+        max_deflection_layout.addWidget(max_deflection_label)
+        max_deflection_layout.addWidget(self.max_deflection_value)
+        sensitive_info_layout.addLayout(max_deflection_layout)
+
+        support_label = QLabel("Supports:")
+        sensitive_info_layout.addWidget(support_label)
+        input_layout.addLayout(sensitive_info_layout)
 
         # Add layouts to main layout
         main_layout.addLayout(input_layout, 1)
@@ -222,10 +258,10 @@ class BeamAnalysisApp(QWidget):
         #data = calc.perform_analysis_determinate(10, 1, 1, 100, [(3, 0)], [(10, 10)], [], [])
         data = calc.perform_analysis_determinate(length, elasticity, inertia, 100, supports, point_loads, distributed_loads, moments)
         
-        nodes = data['node_coords']
-        shear = data['shear_forces']
-        moment = data['bending_moments']
+        shear = data['shear_forces'] * -1
+        moment = data['bending_moments'] * -1
         deflection = data['deflections']
+        supports_reactions = data['support_reactions']
 
         # Draw shear force diagram
         self.shear_force_canvas.figure.clear()
@@ -253,3 +289,40 @@ class BeamAnalysisApp(QWidget):
         ax.set_xlabel("Position (m)")
         ax.set_ylabel("Deflection (m)")
         self.deflection_canvas.draw()
+
+        #calculate maximum stress, maximum shear force, maximum bending moment
+        max_shear = max(abs(shear))
+        max_moment = max(abs(moment))
+        max_deflection = max(abs(deflection))
+
+        self.max_shear_value.setText(f"{max_shear:.4e}")
+        self.max_moment_value.setText(f"{max_moment:.4e}")
+        self.max_deflection_value.setText(f"{max_deflection:.4e}")
+
+        # Show support reactions
+        # Clear previous support reactions
+        for i in reversed(range(self.layout().itemAt(0).layout().count())):
+            widget = self.layout().itemAt(0).layout().itemAt(i).widget()
+            if isinstance(widget, QLabel) and "at" in widget.text():
+                widget.deleteLater()
+
+        for reaction in supports_reactions:
+            position = reaction['position']
+            force = reaction['force']
+            if reaction['type'] == 1:
+                support_type = "Roller"
+            elif reaction['type'] == 2:
+                support_type = "Pin"
+            elif reaction['type'] == 3:
+                support_type = "Fixed"
+                moment = reaction['moment']
+            
+            reaction_label = QLabel(f"{support_type} at {position}m: Force = {force:.4e} N")
+            if support_type == "Fixed":
+                reaction_label.setText(reaction_label.text() + f", Moment = {moment:.4e} Nm")
+            self.layout().itemAt(0).layout().addWidget(reaction_label)
+            
+
+
+        
+        
