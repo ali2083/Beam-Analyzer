@@ -258,7 +258,7 @@ class BeamAnalysisApp(QWidget):
         #data = calc.perform_analysis_determinate(10, 1, 1, 100, [(3, 0)], [(10, 10)], [], [])
         data = calc.perform_analysis_determinate(length, elasticity, inertia, 100, supports, point_loads, distributed_loads, moments)
         
-        shear = data['shear_forces'] * -1
+        shear = data['shear_forces']
         moment = data['bending_moments'] * -1
         deflection = data['deflections']
         supports_reactions = data['support_reactions']
